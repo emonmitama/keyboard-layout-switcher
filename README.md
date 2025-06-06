@@ -24,12 +24,6 @@ A PowerShell tool for switching between Japanese (JIS) and US (ANSI) keyboard la
 
 ## 📖 Usage
 
-### First Time Setup
-```powershell
-# Allow script execution (run this once)
-Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
-```
-
 ### Interactive Mode
 ```powershell
 .\keyboard-layout-switcher.ps1
