@@ -4,7 +4,11 @@
 param(
     [Parameter(Mandatory=$false)]
     [ValidateSet("japanese", "english")]
-    [string]$Layout
+    [string]$Layout,
+    
+    [Parameter(Mandatory=$false)]
+    [ValidateSet("restart", "shutdown", "manual")]
+    [string]$Action
 )
 
 # 管理者権限チェックと自動昇格
@@ -90,9 +94,16 @@ Write-Host ""
 # 現在の設定を表示
 Write-Host "Current: " -NoNewline -ForegroundColor White
 Write-Host "$currentDescription" -ForegroundColor Cyan
+
+# デバッグ: パラメータ確認
+if ($Layout) {
+    Write-Host "Target: " -NoNewline -ForegroundColor White
+    Write-Host "$Layout layout" -ForegroundColor Yellow
+}
+
 Write-Host ""
 
-# レイアウト選択（パラメータが指定されていない場合）
+# レイアウト選択（パラメータが指定されていない場合のみ）
 if (-not $Layout) {
     Write-Host "Select layout:" -ForegroundColor White
     Write-Host "  [j] Japanese (JIS 106/109 keys)" -ForegroundColor Gray
@@ -123,6 +134,8 @@ if (-not $Layout) {
         }
     } while (-not $Layout)
 }
+
+Write-Host ""
 
 # 同じレイアウトの場合はスキップ
 if ($currentLayout -eq $Layout) {
@@ -167,17 +180,11 @@ try {
 Write-Host ""
 Write-Host "Restart required to apply changes" -ForegroundColor White
 Write-Host ""
-Write-Host "  [r] Restart now" -ForegroundColor Gray
-Write-Host "  [s] Shutdown now" -ForegroundColor Gray
-Write-Host "  [n] Later manually" -ForegroundColor Gray
-Write-Host ""
 
-do {
-    $choice = Read-Host "Choice"
-    
-    switch ($choice.ToLower()) {
-        "r" {
-            Write-Host ""
+# アクションパラメータが指定されている場合は自動実行
+if ($Action) {
+    switch ($Action.ToLower()) {
+        "restart" {
             Write-Host "Restarting in 3 seconds..." -ForegroundColor White
             for ($i = 3; $i -gt 0; $i--) {
                 Write-Host "  $i..." -ForegroundColor Gray
@@ -186,8 +193,7 @@ do {
             Restart-Computer -Force
             exit 0
         }
-        "s" {
-            Write-Host ""
+        "shutdown" {
             Write-Host "Shutting down in 3 seconds..." -ForegroundColor White
             for ($i = 3; $i -gt 0; $i--) {
                 Write-Host "  $i..." -ForegroundColor Gray
@@ -196,20 +202,55 @@ do {
             Stop-Computer -Force
             exit 0
         }
-        "n" {
-            Write-Host ""
+        "manual" {
             Write-Host "Configuration saved successfully!" -ForegroundColor Green
             Write-Host "Remember to restart your PC to apply the changes" -ForegroundColor Yellow
-            Write-Host ""
-            Write-Host "Press Enter to exit..." -ForegroundColor Gray
-            $null = Read-Host
             exit 0
         }
-        default {
-            Write-Host "Invalid option. Please choose r, s, or n." -ForegroundColor Red
-        }
     }
-} while ($choice.ToLower() -notin @("r", "s", "n"))
+} else {
+    # 対話モード: ユーザーに選択させる
+    Write-Host "  [r] Restart now" -ForegroundColor Gray
+    Write-Host "  [s] Shutdown now" -ForegroundColor Gray
+    Write-Host "  [n] Later manually" -ForegroundColor Gray
+    Write-Host ""
 
-Write-Host ""
-Write-Host "Thanks for using Keyboard Layout Switcher!" -ForegroundColor White
+    do {
+        $choice = Read-Host "Choice"
+        
+        switch ($choice.ToLower()) {
+            "r" {
+                Write-Host ""
+                Write-Host "Restarting in 3 seconds..." -ForegroundColor White
+                for ($i = 3; $i -gt 0; $i--) {
+                    Write-Host "  $i..." -ForegroundColor Gray
+                    Start-Sleep -Seconds 1
+                }
+                Restart-Computer -Force
+                exit 0
+            }
+            "s" {
+                Write-Host ""
+                Write-Host "Shutting down in 3 seconds..." -ForegroundColor White
+                for ($i = 3; $i -gt 0; $i--) {
+                    Write-Host "  $i..." -ForegroundColor Gray
+                    Start-Sleep -Seconds 1
+                }
+                Stop-Computer -Force
+                exit 0
+            }
+            "n" {
+                Write-Host ""
+                Write-Host "Configuration saved successfully!" -ForegroundColor Green
+                Write-Host "Remember to restart your PC to apply the changes" -ForegroundColor Yellow
+                Write-Host ""
+                Write-Host "Press Enter to exit..." -ForegroundColor Gray
+                $null = Read-Host
+                exit 0
+            }
+            default {
+                Write-Host "Invalid option. Please choose r, s, or n." -ForegroundColor Red
+            }
+        }
+    } while ($choice.ToLower() -notin @("r", "s", "n"))
+}
